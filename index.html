@@ -218,6 +218,52 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
 .ornament-line { flex:1; height:1px; background:var(--pearl3); }
 .ornament-diamond { width:5px; height:5px; background:var(--gold); transform:rotate(45deg); flex-shrink:0; }
 /* TOAST */
+/* DETAIL MODAL */
+.detail-modal-bg {
+  display:none; position:fixed; inset:0;
+  background:rgba(26,22,20,0.7); z-index:2000;
+  align-items:center; justify-content:center;
+  backdrop-filter:blur(6px);
+}
+.detail-modal-bg.open { display:flex; }
+.detail-modal {
+  background:var(--white); border:1px solid var(--pearl3);
+  border-top:4px solid var(--gold);
+  width:100%; max-width:480px; max-height:90vh;
+  overflow-y:auto; position:relative;
+  box-shadow:0 24px 64px rgba(26,22,20,0.25);
+  animation:fadeIn 0.25s ease;
+}
+.detail-img {
+  width:100%; max-height:280px; object-fit:cover;
+  border-bottom:2px solid var(--gold-pale);
+  display:block;
+}
+.detail-img-placeholder {
+  width:100%; height:180px;
+  background:var(--pearl2);
+  display:flex; align-items:center; justify-content:center;
+  border-bottom:2px solid var(--gold-pale);
+}
+.detail-body { padding:28px 32px; }
+.detail-nome { font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:300; color:var(--ink); margin-bottom:4px; }
+.detail-ref  { font-size:11px; letter-spacing:0.3em; text-transform:uppercase; color:var(--ink3); margin-bottom:24px; }
+.detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.detail-item-label { font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:var(--ink3); margin-bottom:4px; }
+.detail-item-val { font-family:'Cormorant Garamond',serif; font-size:26px; color:var(--ink); }
+.detail-item-val.gold { color:var(--gold); }
+.detail-item-val.green { color:var(--success); }
+.detail-item-val.red { color:var(--danger); }
+.detail-close {
+  position:absolute; top:14px; right:18px;
+  background:none; border:none; color:var(--ink3);
+  font-size:24px; cursor:pointer; z-index:10;
+  line-height:1;
+}
+.detail-close:hover { color:var(--gold); }
+.stock-table tr.clickable { cursor:pointer; }
+.stock-table tr.clickable:hover td { background:var(--gold-bg); }
+
 .toast {
   position:fixed; bottom:28px; right:28px;
   background:var(--black); border-top:3px solid var(--gold); color:var(--pearl);
@@ -910,7 +956,7 @@ function renderEstoque(){
     const st=p.qtd<=0?['badge-out','Esgotado']:p.qtd<=2?['badge-low','Baixo']:['badge-ok','Disponível'];
     const thumb=p.foto?`<img class="product-thumb" src="${p.foto}" alt="">`:
       `<div class="product-thumb-placeholder"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M16.51 17.35l-.35 3.83a2 2 0 0 1-1.99 1.82H9.83a2 2 0 0 1-1.99-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 1h4.34a2 2 0 0 1 1.99 1.82l.35 3.83"/></svg></div>`;
-    return `<tr>
+    return `<tr class="clickable" onclick="verDetalhe('${p.id}')">
       <td>${thumb}</td>
       <td><div style="font-weight:500">${p.nome}</div><div style="font-size:10px;color:var(--ink3);margin-top:2px">${p.ref||''}</div></td>
       <td>${fmt(p.custo||0)}</td>
@@ -1091,6 +1137,37 @@ function renderHistorico(){
 
 // Inicialização via onSnapshot acima
 
+// DETALHE DO PRODUTO
+function verDetalhe(id){
+  const p = produtos.find(x=>x.id===id);
+  if(!p) return;
+  const imgWrap = document.getElementById('detail-img-wrap');
+  if(p.foto){
+    imgWrap.innerHTML = `<img class="detail-img" src="${p.foto}" alt="${p.nome}">`;
+  } else {
+    imgWrap.innerHTML = `<div class="detail-img-placeholder"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M16.51 17.35l-.35 3.83a2 2 0 0 1-1.99 1.82H9.83a2 2 0 0 1-1.99-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 1h4.34a2 2 0 0 1 1.99 1.82l.35 3.83"/></svg></div>`;
+  }
+  document.getElementById('detail-nome').textContent = p.nome || '—';
+  document.getElementById('detail-ref').textContent  = p.ref ? 'Ref: '+p.ref : '';
+  document.getElementById('detail-custo').textContent = fmt(p.custo||0);
+  document.getElementById('detail-emb').textContent   = fmt(p.emb||0);
+  document.getElementById('detail-preco').textContent = fmt(p.preco||0);
+  const lucro = (p.preco||0)-(p.custo||0)-(p.emb||0);
+  const elLucro = document.getElementById('detail-lucro');
+  elLucro.textContent = fmt(lucro);
+  elLucro.className = 'detail-item-val ' + (lucro>=0?'green':'red');
+  const qtdEl = document.getElementById('detail-qtd');
+  qtdEl.textContent = (p.qtd||0)+' unid.';
+  qtdEl.className = 'detail-item-val ' + (p.qtd<=0?'red':p.qtd<=2?'gold':'');
+  document.getElementById('detail-total-inv').textContent = fmt(((p.custo||0)+(p.emb||0))*(p.qtd||0));
+  document.getElementById('detail-modal-bg').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeDetail(){
+  document.getElementById('detail-modal-bg').classList.remove('open');
+  document.body.style.overflow='';
+}
+
 // Expõe funções para o HTML (necessário com type="module")
 window.showTab         = showTab;
 window.calcular        = calcular;
@@ -1106,7 +1183,47 @@ window.previewFoto     = previewFoto;
 window.editarProduto   = editarProduto;
 window.removerProduto  = removerProduto;
 window.alterarQtd      = alterarQtd;
+window.verDetalhe      = verDetalhe;
+window.closeDetail     = closeDetail;
 </script>
+<!-- MODAL DETALHES PRODUTO -->
+<div class="detail-modal-bg" id="detail-modal-bg" onclick="if(event.target===this)closeDetail()">
+  <div class="detail-modal">
+    <button class="detail-close" onclick="closeDetail()">×</button>
+    <div id="detail-img-wrap"></div>
+    <div class="detail-body">
+      <div class="detail-nome" id="detail-nome"></div>
+      <div class="detail-ref"  id="detail-ref"></div>
+      <div class="detail-grid">
+        <div>
+          <div class="detail-item-label">Custo</div>
+          <div class="detail-item-val gold" id="detail-custo"></div>
+        </div>
+        <div>
+          <div class="detail-item-label">Embalagem</div>
+          <div class="detail-item-val" id="detail-emb"></div>
+        </div>
+        <div>
+          <div class="detail-item-label">Preço de venda</div>
+          <div class="detail-item-val" id="detail-preco"></div>
+        </div>
+        <div>
+          <div class="detail-item-label">Lucro por peça</div>
+          <div class="detail-item-val" id="detail-lucro"></div>
+        </div>
+        <div>
+          <div class="detail-item-label">Em estoque</div>
+          <div class="detail-item-val" id="detail-qtd"></div>
+        </div>
+        <div>
+          <div class="detail-item-label">Total investido</div>
+          <div class="detail-item-val" id="detail-total-inv"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /app-screen -->
 </body>
 </html>
