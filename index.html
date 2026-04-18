@@ -712,7 +712,8 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
   </div>
   <div class="cards-grid">
     <div class="card"><div class="card-label">Total vendido</div><div class="card-value" id="hist-total">R$ 0,00</div><div class="card-sub" id="hist-qtd">0 vendas</div></div>
-    <div class="card"><div class="card-label">Lucro acumulado</div><div class="card-value gold" id="hist-lucro">R$ 0,00</div><div class="card-sub">Após taxas e custos</div></div>
+    <div class="card"><div class="card-label">Lucro bruto</div><div class="card-value gold" id="hist-lucro-bruto">R$ 0,00</div><div class="card-sub">Após taxas e custos</div></div>
+    <div class="card"><div class="card-label">Lucro líquido</div><div class="card-value gold" id="hist-lucro">R$ 0,00</div><div class="card-sub">Após comissões</div></div>
     <div class="card"><div class="card-label">Ticket médio</div><div class="card-value" id="hist-ticket">R$ 0,00</div><div class="card-sub">Valor médio por venda</div></div>
   </div>
   <div id="hist-empty" class="empty-state">
@@ -856,7 +857,7 @@ function saveData(){
 function updateHeader(){
   const pecas = produtos.reduce((a,p)=>a+(p.qtd||0),0);
   const inv   = produtos.reduce((a,p)=>a+(p.custo||0)*(p.qtd||0),0);
-  const lucro = vendas.reduce((a,v)=>a+(v.lucro||0),0);
+  const lucro = vendas.reduce((a,v)=>a+(v.lucroLiquido??v.lucro??0),0);
   document.getElementById('hstat-pecas').textContent     = pecas;
   document.getElementById('hstat-investido').textContent = fmt(inv);
   document.getElementById('hstat-lucro').textContent     = fmt(lucro);
@@ -1112,10 +1113,12 @@ function renderHistorico(){
   const list=document.getElementById('hist-list');
   const empty=document.getElementById('hist-empty');
   const total=vendas.reduce((a,v)=>a+v.valor,0);
-  const lucro=vendas.reduce((a,v)=>a+v.lucro,0);
+  const lucroBruto=vendas.reduce((a,v)=>a+(v.lucro??0),0);
+  const lucroLiq=vendas.reduce((a,v)=>a+(v.lucroLiquido??v.lucro??0),0);
   const ticket=vendas.length?total/vendas.length:0;
   document.getElementById('hist-total').textContent=fmt(total);
-  document.getElementById('hist-lucro').textContent=fmt(lucro);
+  document.getElementById('hist-lucro-bruto').textContent=fmt(lucroBruto);
+  document.getElementById('hist-lucro').textContent=fmt(lucroLiq);
   document.getElementById('hist-ticket').textContent=fmt(ticket);
   document.getElementById('hist-qtd').textContent=vendas.length+' vendas';
   if(!vendas.length){empty.style.display='block';list.innerHTML='';return;}
@@ -1129,7 +1132,11 @@ function renderHistorico(){
         <div style="display:flex;align-items:center;">${thumb}
           <div><div class="venda-name">${v.nome}</div><div class="venda-date">${dt} · ${v.pagto||''}${v.obs?' · '+v.obs:''}${v.vendedora?' · Vendedora: '+v.vendedora+' ('+v.comissaoPct+'%)':''}</div></div>
         </div>
-        <div><div class="venda-profit">${fmt(v.lucroLiquido??v.lucro)}</div><div class="venda-price">${fmt(v.valor)} vendido${v.vendedora&&v.comissaoVal>0?' · comissão: '+fmt(v.comissaoVal):''}</div></div>
+        <div style="text-align:right;">
+          <div class="venda-profit">${fmt(v.lucroLiquido??v.lucro)}</div>
+          ${v.vendedora&&v.comissaoVal>0?`<div style="font-size:11px;color:var(--ink3);margin-top:1px;">Bruto: ${fmt(v.lucro)} · comissão: −${fmt(v.comissaoVal)}</div>`:''}
+          <div class="venda-price">${fmt(v.valor)} vendido</div>
+        </div></div>
       </div>`;
     }).join('')}
   </div>`;
