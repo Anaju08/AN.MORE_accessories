@@ -996,6 +996,22 @@ function renderHistorico(){
 }
 
 // Inicialização via onSnapshot acima
+
+// Expõe funções para o HTML (necessário com type="module")
+window.showTab         = showTab;
+window.calcular        = calcular;
+window.toggleTaxaCustom = toggleTaxaCustom;
+window.calcVenda       = calcVenda;
+window.toggleVTaxaCustom = toggleVTaxaCustom;
+window.preencherVenda  = preencherVenda;
+window.registrarVenda  = registrarVenda;
+window.openModal       = openModal;
+window.closeModal      = closeModal;
+window.salvarProduto   = salvarProduto;
+window.previewFoto     = previewFoto;
+window.editarProduto   = editarProduto;
+window.removerProduto  = removerProduto;
+window.alterarQtd      = alterarQtd;
 </script>
 </div><!-- /app-screen -->
 </body>
