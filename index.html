@@ -402,7 +402,11 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
   <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:20px;">
     <button class="btn" onclick="sincronizarCatalogo()" id="btn-sync" style="display:flex;align-items:center;gap:8px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      Sincronizar tudo com catálogo
+      Sincronizar com catálogo
+    </button>
+    <button class="btn" onclick="recomprimirFotos()" id="btn-recompress" style="display:flex;align-items:center;gap:8px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Comprimir fotos
     </button>
     <button class="btn btn-dark" onclick="openModal()">+ Adicionar Produto</button>
   </div>
@@ -710,7 +714,7 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 async function saveData(){
   const payload = { produtos, vendas };
   const size = JSON.stringify(payload).length;
-  if(size > 900000){ toast('⚠️ Banco de dados quase cheio! Remova vendas antigas.'); updateHeader(); return; }
+  if(size > 950000){ toast('⚠️ Banco de dados quase cheio! Remova vendas antigas.'); updateHeader(); return; }
 
   try {
     await setDoc(DOC_REF, payload);
@@ -868,14 +872,14 @@ function previewFoto(e){
   reader.onload=ev=>{
     const imgEl=new Image();
     imgEl.onload=()=>{
-      const MAX=600;
+      const MAX=400;
       let w=imgEl.width, h=imgEl.height;
       if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}
       else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}
       const canvas=document.createElement('canvas');
       canvas.width=w; canvas.height=h;
       canvas.getContext('2d').drawImage(imgEl,0,0,w,h);
-      modalFoto=canvas.toDataURL('image/jpeg',0.7);
+      modalFoto=canvas.toDataURL('image/jpeg',0.5);
       const prev=document.getElementById('prev-img');
       prev.src=modalFoto; prev.style.display='block';
     };
@@ -1060,6 +1064,44 @@ function showTab(t){
   updateHeader();
 }
 
+// RECOMPRIMIR TODAS AS FOTOS
+async function recomprimirFotos(){
+  if(!produtos.length){ toast('Nenhum produto para comprimir.'); return; }
+  const btn = document.getElementById('btn-recompress');
+  btn.innerHTML = '⏳ Comprimindo...';
+  btn.disabled = true;
+
+  let count = 0;
+  const promises = produtos.map(p => new Promise(resolve => {
+    if(!p.foto || !p.foto.startsWith('data:image')) { resolve(); return; }
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 400;
+      let w = img.width, h = img.height;
+      if(w > h){ if(w > MAX){ h = Math.round(h*MAX/w); w = MAX; } }
+      else      { if(h > MAX){ w = Math.round(w*MAX/h); h = MAX; } }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const novaFoto = canvas.toDataURL('image/jpeg', 0.45);
+      if(novaFoto.length < p.foto.length){
+        p.foto = novaFoto;
+        count++;
+      }
+      resolve();
+    };
+    img.onerror = () => resolve();
+    img.src = p.foto;
+  }));
+
+  await Promise.all(promises);
+  await saveData();
+  renderEstoque();
+  toast(`✓ ${count} fotos comprimidas! Banco de dados liberado.`);
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Comprimir fotos';
+  btn.disabled = false;
+}
+
 // SINCRONIZAR TUDO COM CATÁLOGO
 async function sincronizarCatalogo(){
   const btn = document.getElementById('btn-sync');
@@ -1094,7 +1136,7 @@ async function sincronizarCatalogo(){
 }
 
 // Expõe globais
-window.showTab=showTab; window.sincronizarCatalogo=sincronizarCatalogo; window.calcular=calcular; window.toggleTaxaCustom=toggleTaxaCustom;
+window.showTab=showTab; window.sincronizarCatalogo=sincronizarCatalogo; window.recomprimirFotos=recomprimirFotos; window.calcular=calcular; window.toggleTaxaCustom=toggleTaxaCustom;
 window.calcVenda=calcVenda; window.toggleVTaxaCustom=toggleVTaxaCustom; window.preencherVenda=preencherVenda;
 window.registrarVenda=registrarVenda; window.openModal=openModal; window.closeModal=closeModal;
 window.salvarProduto=salvarProduto; window.previewFoto=previewFoto;
