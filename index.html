@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -866,26 +867,46 @@ function closeModal(){
   editId=null; modalFoto=null;
 }
 
-function previewFoto(e){
+async function previewFoto(e){
   const f=e.target.files[0]; if(!f) return;
+
+  // Preview local imediato
   const reader=new FileReader();
   reader.onload=ev=>{
-    const imgEl=new Image();
-    imgEl.onload=()=>{
-      const MAX=400;
-      let w=imgEl.width, h=imgEl.height;
-      if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}
-      else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}
-      const canvas=document.createElement('canvas');
-      canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(imgEl,0,0,w,h);
-      modalFoto=canvas.toDataURL('image/jpeg',0.5);
-      const prev=document.getElementById('prev-img');
-      prev.src=modalFoto; prev.style.display='block';
-    };
-    imgEl.src=ev.target.result;
+    const prev=document.getElementById('prev-img');
+    prev.src=ev.target.result; prev.style.display='block';
   };
   reader.readAsDataURL(f);
+
+  // Upload para Cloudinary
+  const uploadText=document.querySelector('.photo-upload-text');
+  if(uploadText) uploadText.textContent='Enviando foto...';
+
+  try {
+    const formData=new FormData();
+    formData.append('file', f);
+    formData.append('upload_preset', 'anmore_produtos');
+
+    const res=await fetch('https://api.cloudinary.com/v1_1/dinsfsxbm/image/upload', {
+      method:'POST', body:formData
+    });
+    const data=await res.json();
+
+    if(data.secure_url){
+      modalFoto=data.secure_url;
+      const prev=document.getElementById('prev-img');
+      prev.src=modalFoto; prev.style.display='block';
+      if(uploadText) uploadText.textContent='Foto enviada!';
+      toast('Foto salva no Cloudinary!');
+    } else {
+      throw new Error('Upload falhou');
+    }
+  } catch(err){
+    toast('Erro ao enviar foto. Tente novamente.');
+    console.error(err);
+    if(uploadText) uploadText.textContent='Clique para adicionar foto';
+    modalFoto=null;
+  }
 }
 
 function salvarProduto(){
