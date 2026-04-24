@@ -492,6 +492,16 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
       </div>
       <div class="form-group"><label>Valor de venda (R$)</label><input type="number" id="v-valor" placeholder="0,00" step="0.01" oninput="calcVenda()"></div>
       <div class="form-group">
+        <label>Desconto (opcional)</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="number" id="v-desconto" placeholder="0" step="0.01" min="0" oninput="calcVenda()" style="flex:1;background:var(--pearl);border:1px solid var(--pearl3);border-bottom:2px solid var(--pearl3);color:var(--ink);padding:12px 14px;font-family:'Jost',sans-serif;font-size:16px;font-weight:400;outline:none;transition:border-color 0.25s;">
+          <div style="display:flex;border:1px solid var(--pearl3);overflow:hidden;flex-shrink:0;">
+            <button id="btn-desc-pct" onclick="setDescontoTipo('pct')" style="padding:10px 14px;font-size:11px;letter-spacing:0.2em;font-family:'Jost',sans-serif;font-weight:500;border:none;cursor:pointer;background:var(--gold);color:var(--white);transition:all 0.2s;">%</button>
+            <button id="btn-desc-val" onclick="setDescontoTipo('val')" style="padding:10px 14px;font-size:11px;letter-spacing:0.2em;font-family:'Jost',sans-serif;font-weight:500;border:none;cursor:pointer;background:var(--pearl);color:var(--ink3);transition:all 0.2s;">R$</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
         <label>Forma de pagamento</label>
         <select id="v-pagto" onchange="toggleVTaxaCustom(); calcVenda()">
           <option value="0">Pix / Dinheiro</option>
@@ -531,6 +541,7 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
     </div>
     <div class="custo-breakdown" style="margin:24px 0;">
       <div class="cb-item"><div class="cb-label">Custo da peça</div><div class="cb-val gold" id="vr-custo">R$ —</div></div>
+      <div class="cb-item" id="vr-desc-row" style="display:none"><div class="cb-label">Desconto concedido</div><div class="cb-val" id="vr-desc" style="color:var(--danger)">R$ —</div></div>
       <div class="cb-item"><div class="cb-label">Taxa maquininha</div><div class="cb-val" id="vr-taxa">R$ —</div></div>
       <div class="cb-item"><div class="cb-label">Você vai receber</div><div class="cb-val gold" id="vr-liquido">R$ —</div></div>
       <div class="cb-item"><div class="cb-label">Lucro líquido</div><div class="cb-val" id="vr-lucro" style="color:var(--success)">R$ —</div></div>
@@ -996,17 +1007,33 @@ function populaSelectVenda(){
   produtos.filter(p=>p.qtd>0).forEach(p=>{ sel.innerHTML+=`<option value="${p.id}">${p.nome} (${p.qtd} em estoque)</option>`; });
 }
 function toggleVTaxaCustom(){ document.getElementById('v-grp-custom').style.display=document.getElementById('v-pagto').value==='custom'?'flex':'none'; }
+let _descontoTipo = 'pct';
+function setDescontoTipo(tipo){
+  _descontoTipo = tipo;
+  document.getElementById('btn-desc-pct').style.background = tipo==='pct'?'var(--gold)':'var(--pearl)';
+  document.getElementById('btn-desc-pct').style.color = tipo==='pct'?'var(--white)':'var(--ink3)';
+  document.getElementById('btn-desc-val').style.background = tipo==='val'?'var(--gold)':'var(--pearl)';
+  document.getElementById('btn-desc-val').style.color = tipo==='val'?'var(--white)':'var(--ink3)';
+  document.getElementById('v-desconto').placeholder = tipo==='pct'?'Ex: 10':'Ex: 20,00';
+  calcVenda();
+}
 function preencherVenda(){ const p=produtos.find(x=>x.id===document.getElementById('v-produto').value); if(p&&p.preco) document.getElementById('v-valor').value=p.preco; calcVenda(); }
 function calcVenda(){
   const id=document.getElementById('v-produto').value;
   const p=produtos.find(x=>x.id===id);
   const valor=parseFloat(document.getElementById('v-valor').value)||0;
+  const descontoInput=parseFloat(document.getElementById('v-desconto').value)||0;
+  const descontoVal=_descontoTipo==='pct'?valor*(descontoInput/100):descontoInput;
+  const valorComDesc=Math.max(0,valor-descontoVal);
   const taxa=getTaxa('v-pagto','v-taxa-custom');
   const custo=(p?(p.custo||0)+(p.emb||0):0);
-  const taxaVal=valor*(taxa/100);
-  const liquido=valor-taxaVal;
+  const taxaVal=valorComDesc*(taxa/100);
+  const liquido=valorComDesc-taxaVal;
   const lucro=liquido-custo;
   document.getElementById('vr-custo').textContent=fmt(custo);
+  const descRow=document.getElementById('vr-desc-row');
+  if(descontoVal>0&&valor>0){descRow.style.display='';document.getElementById('vr-desc').textContent='-'+fmt(descontoVal);}
+  else{descRow.style.display='none';}
   document.getElementById('vr-taxa').textContent=valor>0?fmt(taxaVal):'R$ —';
   document.getElementById('vr-liquido').textContent=valor>0?fmt(liquido):'R$ —';
   const el=document.getElementById('vr-lucro');
@@ -1040,17 +1067,20 @@ function registrarVenda(){
   if(!id){toast('Selecione um produto.');return;}
   if(!valor){toast('Informe o valor de venda.');return;}
   if(!p||p.qtd<=0){toast('Produto sem estoque.');return;}
+  const descontoInput=parseFloat(document.getElementById('v-desconto').value)||0;
+  const descontoVal=_descontoTipo==='pct'?valor*(descontoInput/100):descontoInput;
+  const valorComDesc=Math.max(0,valor-descontoVal);
   const taxa=getTaxa('v-pagto','v-taxa-custom');
   const custo=(p.custo||0)+(p.emb||0);
-  const taxaVal=valor*(taxa/100);
-  const liquido=valor-taxaVal;
+  const taxaVal=valorComDesc*(taxa/100);
+  const liquido=valorComDesc-taxaVal;
   const lucro=liquido-custo;
   const vendedora=document.getElementById('v-vendedora').value.trim();
   const comissaoPct=parseFloat(document.getElementById('v-comissao').value)||0;
   const comissaoVal=liquido*(comissaoPct/100);
   const lucroLiquido=lucro-comissaoVal;
   const pagtoTxt=document.getElementById('v-pagto').options[document.getElementById('v-pagto').selectedIndex].text;
-  vendas.unshift({id:uid(),produtoId:id,nome:p.nome,foto:p.foto||null,valor,taxa,taxaVal,liquido,lucro,lucroLiquido,vendedora:vendedora||null,comissaoPct,comissaoVal,data,obs,pagto:pagtoTxt,
+  vendas.unshift({id:uid(),produtoId:id,nome:p.nome,foto:p.foto||null,valor,descontoVal,valorComDesc,taxa,taxaVal,liquido,lucro,lucroLiquido,vendedora:vendedora||null,comissaoPct,comissaoVal,data,obs,pagto:pagtoTxt,
     clienteNome:document.getElementById('v-cliente-nome').value.trim()||null,
     clienteWhatsapp:document.getElementById('v-cliente-whatsapp').value.trim()||null,
     clienteEmail:document.getElementById('v-cliente-email').value.trim()||null,
@@ -1058,7 +1088,7 @@ function registrarVenda(){
     ts:Date.now()});
   p.qtd=Math.max(0,p.qtd-1);
   saveData();
-  ['v-produto','v-valor','v-obs','v-vendedora','v-comissao','v-cliente-nome','v-cliente-whatsapp','v-cliente-email','v-cliente-aniversario'].forEach(id=>document.getElementById(id).value='');
+  ['v-produto','v-valor','v-desconto','v-obs','v-vendedora','v-comissao','v-cliente-nome','v-cliente-whatsapp','v-cliente-email','v-cliente-aniversario'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('v-data').value='';
   document.getElementById('comissao-breakdown').style.display='none';
   calcVenda(); renderEstoque(); populaSelectVenda();
@@ -1217,18 +1247,19 @@ async function sincronizarCatalogo(){
 }
 
 // Expõe globais
-// Abre catálogo na aba certa usando localStorage como ponte
+// Abre catálogo na aba certa
 function abrirCatalogoCat(cat){
   localStorage.setItem('anmore_filtro_cat', cat);
-  // tenta abrir aba do catálogo se já estiver aberta
-  const w = window.open('', 'anmore_catalogo');
-  if(w && w.location && w.location.href !== 'about:blank'){
-    try { w.filtrarCategoria && w.filtrarCategoria(cat); } catch(e){}
-    w.focus();
-  } else {
-    // abre nova aba com hash
-    window.open('anmore-catalogo-v6.html#' + cat, 'anmore_catalogo');
-  }
+  // Se já tem aba aberta, tenta filtrar diretamente
+  try {
+    if(window._catalogoWin && !window._catalogoWin.closed){
+      window._catalogoWin.filtrarCategoria(cat);
+      window._catalogoWin.focus();
+      return;
+    }
+  } catch(e){}
+  // Abre nova aba com hash
+  window._catalogoWin = window.open('anmore-catalogo-v6.html#' + cat, 'anmore_catalogo');
 }
 window.abrirCatalogoCat = abrirCatalogoCat;
 window.showTab=showTab; window.sincronizarCatalogo=sincronizarCatalogo; window.recomprimirFotos=recomprimirFotos; window.calcular=calcular; window.toggleTaxaCustom=toggleTaxaCustom;
