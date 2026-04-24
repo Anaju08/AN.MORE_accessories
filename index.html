@@ -496,8 +496,8 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
         <div style="display:flex;gap:8px;align-items:center;">
           <input type="number" id="v-desconto" placeholder="0" step="0.01" min="0" oninput="calcVenda()" style="flex:1;background:var(--pearl);border:1px solid var(--pearl3);border-bottom:2px solid var(--pearl3);color:var(--ink);padding:12px 14px;font-family:'Jost',sans-serif;font-size:16px;font-weight:400;outline:none;transition:border-color 0.25s;">
           <div style="display:flex;border:1px solid var(--pearl3);overflow:hidden;flex-shrink:0;">
-            <button id="btn-desc-pct" onclick="setDescontoTipo('pct')" style="padding:10px 14px;font-size:11px;letter-spacing:0.2em;font-family:'Jost',sans-serif;font-weight:500;border:none;cursor:pointer;background:var(--gold);color:var(--white);transition:all 0.2s;">%</button>
-            <button id="btn-desc-val" onclick="setDescontoTipo('val')" style="padding:10px 14px;font-size:11px;letter-spacing:0.2em;font-family:'Jost',sans-serif;font-weight:500;border:none;cursor:pointer;background:var(--pearl);color:var(--ink3);transition:all 0.2s;">R$</button>
+            <div id="btn-desc-pct" onclick="setDescontoTipo('pct')" style="padding:10px 14px;font-size:11px;letter-spacing:0.2em;font-family:'Jost',sans-serif;font-weight:500;cursor:pointer;background:var(--gold);color:var(--white);transition:all 0.2s;user-select:none;">%</div>
+            <div id="btn-desc-val" onclick="setDescontoTipo('val')" style="padding:10px 14px;font-size:11px;letter-spacing:0.2em;font-family:'Jost',sans-serif;font-weight:500;cursor:pointer;background:var(--pearl);color:var(--ink3);transition:all 0.2s;user-select:none;">R$</div>
           </div>
         </div>
       </div>
