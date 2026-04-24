@@ -491,12 +491,12 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
         </select>
       </div>
       <div class="form-group"><label>Valor de venda (R$)</label><input type="number" id="v-valor" placeholder="0,00" step="0.01" oninput="calcVenda()"></div>
-      <div class="form-group" style="grid-column: 1 / -1; max-width: 340px;">
+      <div class="form-group">
         <label>Desconto (opcional)</label>
-        <div style="display:flex;gap:0;align-items:stretch;">
-          <input type="number" id="v-desconto" placeholder="0" step="0.01" min="0" oninput="calcVenda()" style="flex:1;min-width:0;background:var(--pearl);border:1px solid var(--pearl3);border-bottom:2px solid var(--pearl3);border-right:none;color:var(--ink);padding:12px 14px;font-family:'Jost',sans-serif;font-size:16px;font-weight:400;outline:none;transition:border-color 0.25s;">
-          <div id="btn-desc-pct" onclick="setDescontoTipo('pct')" style="padding:0 18px;font-size:12px;letter-spacing:0.15em;font-family:'Jost',sans-serif;font-weight:500;cursor:pointer;background:var(--gold);color:var(--white);transition:all 0.2s;user-select:none;display:flex;align-items:center;border:1px solid var(--gold);border-right:none;">%</div>
-          <div id="btn-desc-val" onclick="setDescontoTipo('val')" style="padding:0 14px;font-size:12px;letter-spacing:0.1em;font-family:'Jost',sans-serif;font-weight:500;cursor:pointer;background:var(--pearl);color:var(--ink3);transition:all 0.2s;user-select:none;display:flex;align-items:center;border:1px solid var(--pearl3);border-bottom:2px solid var(--pearl3);">R$</div>
+        <div style="display:grid;grid-template-columns:1fr 44px 44px;">
+          <input type="number" id="v-desconto" placeholder="0" step="0.01" min="0" oninput="calcVenda()" style="background:var(--pearl);border:1px solid var(--pearl3);border-bottom:2px solid var(--pearl3);border-right:none;color:var(--ink);padding:12px 14px;font-family:'Jost',sans-serif;font-size:16px;font-weight:400;outline:none;transition:border-color 0.25s;width:100%;">
+          <div id="btn-desc-pct" onclick="setDescontoTipo('pct')" style="display:flex;align-items:center;justify-content:center;font-size:13px;font-family:'Jost',sans-serif;font-weight:600;cursor:pointer;background:var(--gold);color:var(--white);transition:all 0.2s;user-select:none;border:1px solid var(--gold);border-bottom:2px solid var(--gold);">%</div>
+          <div id="btn-desc-val" onclick="setDescontoTipo('val')" style="display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'Jost',sans-serif;font-weight:600;cursor:pointer;background:var(--pearl);color:var(--ink3);transition:all 0.2s;user-select:none;border:1px solid var(--pearl3);border-bottom:2px solid var(--pearl3);border-left:none;">R$</div>
         </div>
       </div>
       <div class="form-group">
