@@ -139,12 +139,12 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
 
 /* STOCK TABLE */
 .stock-table { width:100%; border-collapse:collapse; }
-.stock-table th { font-size:13px; letter-spacing:0.35em; text-transform:uppercase; color:var(--ink3); padding:12px 16px; text-align:left; border-bottom:2px solid var(--gold-pale); font-weight:500; background:var(--pearl); }
-.stock-table td { padding:16px; font-size:17px; border-bottom:1px solid var(--pearl2); vertical-align:middle; }
+.stock-table th { font-size:12.5px; letter-spacing:0.35em; text-transform:uppercase; color:var(--ink3); padding:12px 16px; text-align:left; border-bottom:2px solid var(--gold-pale); font-weight:500; background:var(--pearl); }
+.stock-table td { padding:16px; font-size:16.5px; border-bottom:1px solid var(--pearl2); vertical-align:middle; }
 .stock-table tr:hover td { background:var(--gold-bg); }
 .product-thumb { width:50px; height:50px; object-fit:cover; border:1px solid var(--pearl3); }
 .product-thumb-placeholder { width:50px; height:50px; background:var(--pearl2); border:1px solid var(--pearl3); display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--ink3); }
-.badge { display:inline-block; padding:4px 12px; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; border:1px solid; }
+.badge { display:inline-block; padding:4px 12px; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; border:1px solid; }
 .badge-ok   { color:var(--success); border-color:rgba(58,125,90,0.3); background:rgba(58,125,90,0.06); }
 .badge-low  { color:#8B6914; border-color:rgba(184,150,46,0.3); background:var(--gold-bg); }
 .badge-out  { color:var(--danger); border-color:rgba(155,58,58,0.3); background:rgba(155,58,58,0.05); }
@@ -152,7 +152,7 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
 .qty-ctrl { display:flex; align-items:center; gap:8px; }
 .qty-btn { width:26px; height:26px; background:var(--pearl); border:1px solid var(--pearl3); color:var(--ink); cursor:pointer; font-size:15px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
 .qty-btn:hover { background:var(--gold); border-color:var(--gold); color:var(--white); }
-.qty-num { font-family:'Cormorant Garamond',serif; font-size:24px; min-width:28px; text-align:center; color:var(--ink); }
+.qty-num { font-family:'Cormorant Garamond',serif; font-size:22px; min-width:28px; text-align:center; color:var(--ink); }
 
 /* MODAL */
 .modal-bg { display:none; position:fixed; inset:0; background:rgba(26,22,20,0.6); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
@@ -865,13 +865,13 @@ function renderEstoque(){
     const multPromo = custoBase>0&&p.precoPromo&&parseFloat(p.precoPromo)>0 ? (parseFloat(p.precoPromo)/custoBase).toFixed(1) : null;
     return `<tr class="clickable" onclick="verDetalhe('${p.id}')">
       <td>${thumb}</td>
-      <td><div style="font-weight:500;font-size:17px;">${p.nome}</div><div style="font-size:13px;color:var(--ink3);margin-top:2px">${p.ref||''}</div><div style="margin-top:4px"><span onclick="event.stopPropagation();abrirCatalogoCat('${p.categoria||'relogios'}')" title="Ver no catálogo" style="cursor:pointer;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;padding:3px 9px;border:1px solid ${p.categoria==='acessorios'?'rgba(106,100,96,0.3)':'rgba(184,150,46,0.3)'};color:${p.categoria==='acessorios'?'var(--ink3)':'var(--gold)'};background:${p.categoria==='acessorios'?'transparent':'var(--gold-bg)'};">${p.categoria==='acessorios'?'✨ Acessório':'⌚ Relógio'} ↗</span></div></td>
-      <td><div style="font-family:'Cormorant Garamond',serif;font-size:22px;">${fmt(p.custo||0)}</div>${custoBase>(p.custo||0)?`<div style="font-size:13px;color:var(--ink3);">+emb ${fmt(p.emb)}</div>`:''}</td>
-      <td><div style="font-family:'Cormorant Garamond',serif;font-size:22px;">${fmt(p.preco||0)}</div>${p.precoPromo&&parseFloat(p.precoPromo)>0?`<div style="font-size:17px;color:var(--gold);margin-top:2px;">★ ${fmt(p.precoPromo)}</div><div style="font-size:12px;color:var(--ink3);">promo</div>`:''}</td>
+      <td><div style="font-weight:500;font-size:16px;">${p.nome}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px">${p.ref||''}</div><div style="margin-top:4px"><span onclick="event.stopPropagation();abrirCatalogoCat('${p.categoria||'relogios'}')" title="Ver no catálogo" style="cursor:pointer;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;padding:2px 8px;border:1px solid ${p.categoria==='acessorios'?'rgba(106,100,96,0.3)':'rgba(184,150,46,0.3)'};color:${p.categoria==='acessorios'?'var(--ink3)':'var(--gold)'};background:${p.categoria==='acessorios'?'transparent':'var(--gold-bg)'};">${p.categoria==='acessorios'?'✨ Acessório':'⌚ Relógio'} ↗</span></div></td>
+      <td><div style="font-family:'Cormorant Garamond',serif;font-size:20px;">${fmt(p.custo||0)}</div>${custoBase>(p.custo||0)?`<div style="font-size:12px;color:var(--ink3);">+emb ${fmt(p.emb)}</div>`:''}</td>
+      <td><div style="font-family:'Cormorant Garamond',serif;font-size:20px;">${fmt(p.preco||0)}</div>${p.precoPromo&&parseFloat(p.precoPromo)>0?`<div style="font-size:16px;color:var(--gold);margin-top:2px;">★ ${fmt(p.precoPromo)}</div><div style="font-size:11px;color:var(--ink3);">promo</div>`:''}</td>
       <td>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:${lucroNormal>=0?'var(--success)':'var(--danger)'};">${fmt(lucroNormal)}</div>
-        ${mult?`<div style="font-size:13px;color:var(--gold);margin-top:2px;">${mult}× custo</div>`:''}
-        ${lucroPromo!==null?`<div style="font-size:17px;color:${lucroPromo>=0?'var(--success)':'var(--danger)'};margin-top:5px;">★ ${fmt(lucroPromo)}</div><div style="font-size:12px;color:var(--ink3);">${multPromo?multPromo+'× promo':''}</div>`:''}
+        <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:${lucroNormal>=0?'var(--success)':'var(--danger)'};">${fmt(lucroNormal)}</div>
+        ${mult?`<div style="font-size:12px;color:var(--gold);margin-top:2px;">${mult}× custo</div>`:''}
+        ${lucroPromo!==null?`<div style="font-size:16px;color:${lucroPromo>=0?'var(--success)':'var(--danger)'};margin-top:5px;">★ ${fmt(lucroPromo)}</div><div style="font-size:11px;color:var(--ink3);">${multPromo?multPromo+'× promo':''}</div>`:''}
       </td>
       <td><div class="qty-ctrl">
         <button class="qty-btn" onclick="event.stopPropagation();alterarQtd('${p.id}',-1)">−</button>
