@@ -1076,8 +1076,8 @@ function onCartProdutoChange(sel){
   const p = produtos.find(x=>x.id===sel.value);
   if(p && p.preco){
     item.valor = p.preco;
-    // Atualiza input de valor na mesma linha
-    const valInput = sel.closest('div[style]').querySelector('.cart-valor-input');
+    // Atualiza input de valor com o mesmo data-uid
+    const valInput = document.querySelector(`.cart-valor-input[data-uid="${sel.dataset.uid}"]`);
     if(valInput) valInput.value = p.preco;
   }
   calcVenda();
