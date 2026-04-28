@@ -454,7 +454,7 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
     <table class="stock-table">
       <thead>
         <tr>
-          <th>Foto</th><th>Produto</th><th>Custo</th><th>Venda</th><th>Promo</th><th>Lucro s/ Promo</th><th>Lucro c/ Promo</th><th>Multiplicador</th><th>Estoque</th><th>Catálogo</th><th>Ações</th>
+          <th>Foto</th><th>Produto</th><th>Custo</th><th>Venda / Promo</th><th>Lucro</th><th>Estoque</th><th>Catálogo</th><th>Ações</th>
         </tr>
       </thead>
       <tbody id="estoque-tbody"></tbody>
@@ -853,21 +853,26 @@ function renderEstoque(){
     const thumb = p.foto
       ? `<img class="product-thumb" src="${p.foto}" alt="">`
       : `<div class="product-thumb-placeholder">⌚</div>`;
-    const promoHtml = p.precoPromo && parseFloat(p.precoPromo)>0
-      ? `<div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--gold);">${fmt(p.precoPromo)}</div><div style="font-size:9px;color:var(--ink3);">promo</div>`
-      : `<div style="font-size:11px;color:var(--ink3);">—</div>`;
     const catalogoBadge = publicado
       ? `<span class="badge badge-ok">Visível</span>`
       : `<span class="badge badge-hidden">Oculto</span>`;
+    // Lucro normal e promo
+    const lucroNormal = (p.preco||0)-(p.custo||0)-(p.emb||0);
+    const lucroPromo = p.precoPromo&&parseFloat(p.precoPromo)>0 ? parseFloat(p.precoPromo)-(p.custo||0)-(p.emb||0) : null;
+    // Multiplicador
+    const custoBase = (p.custo||0)+(p.emb||0);
+    const mult = custoBase>0 ? ((p.preco||0)/custoBase).toFixed(1) : null;
+    const multPromo = custoBase>0&&p.precoPromo&&parseFloat(p.precoPromo)>0 ? (parseFloat(p.precoPromo)/custoBase).toFixed(1) : null;
     return `<tr class="clickable" onclick="verDetalhe('${p.id}')">
       <td>${thumb}</td>
       <td><div style="font-weight:500">${p.nome}</div><div style="font-size:10px;color:var(--ink3);margin-top:2px">${p.ref||''}</div><div style="margin-top:4px"><span onclick="event.stopPropagation();abrirCatalogoCat('${p.categoria||'relogios'}')" title="Ver no catálogo" style="cursor:pointer;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;padding:2px 7px;border:1px solid ${p.categoria==='acessorios'?'rgba(106,100,96,0.3)':'rgba(184,150,46,0.3)'};color:${p.categoria==='acessorios'?'var(--ink3)':'var(--gold)'};background:${p.categoria==='acessorios'?'transparent':'var(--gold-bg)'};">${p.categoria==='acessorios'?'✨ Acessório':'⌚ Relógio'} ↗</span></div></td>
-      <td>${fmt(p.custo||0)}</td>
-      <td>${fmt(p.preco||0)}</td>
-      <td>${promoHtml}</td>
-      <td><div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:${((p.preco||0)-(p.custo||0)-(p.emb||0))>=0?'var(--success)':'var(--danger)'};">${fmt((p.preco||0)-(p.custo||0)-(p.emb||0))}</div></td>
-      <td>${(()=>{ const lp=p.precoPromo&&parseFloat(p.precoPromo)>0?(parseFloat(p.precoPromo)-(p.custo||0)-(p.emb||0)):null; return lp!==null?`<div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:${lp>=0?'var(--success)':'var(--danger)'};">${fmt(lp)}</div>`:`<div style="font-size:11px;color:var(--ink3);">—</div>`; })()}</td>
-      <td>${(()=>{ const custoBase=(p.custo||0)+(p.emb||0); if(custoBase<=0) return '<div style="font-size:11px;color:var(--ink3);">—</div>'; const mult=(p.preco||0)/custoBase; const multPromo=p.precoPromo&&parseFloat(p.precoPromo)>0?parseFloat(p.precoPromo)/custoBase:null; return `<div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--gold);">${mult.toFixed(1)}×</div>${multPromo!==null?`<div style="font-size:10px;color:var(--ink3);">promo: ${multPromo.toFixed(1)}×</div>`:''}`;})()}</td>
+      <td><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">${fmt(p.custo||0)}</div>${custoBase>(p.custo||0)?`<div style="font-size:9px;color:var(--ink3);">+emb ${fmt(p.emb)}</div>`:''}</td>
+      <td><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">${fmt(p.preco||0)}</div>${p.precoPromo&&parseFloat(p.precoPromo)>0?`<div style="font-size:13px;color:var(--gold);margin-top:2px;">★ ${fmt(p.precoPromo)}</div><div style="font-size:9px;color:var(--ink3);">promo</div>`:''}</td>
+      <td>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:${lucroNormal>=0?'var(--success)':'var(--danger)'};">${fmt(lucroNormal)}</div>
+        ${mult?`<div style="font-size:10px;color:var(--gold);margin-top:1px;">${mult}× custo</div>`:''}
+        ${lucroPromo!==null?`<div style="font-size:13px;color:${lucroPromo>=0?'var(--success)':'var(--danger)'};margin-top:4px;">★ ${fmt(lucroPromo)}</div><div style="font-size:9px;color:var(--ink3);">${multPromo?multPromo+'× promo':''}</div>`:''}
+      </td>
       <td><div class="qty-ctrl">
         <button class="qty-btn" onclick="event.stopPropagation();alterarQtd('${p.id}',-1)">−</button>
         <span class="qty-num">${p.qtd||0}</span>
