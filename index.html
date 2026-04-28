@@ -442,10 +442,7 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Sincronizar com catálogo
     </button>
-    <button class="btn" onclick="recomprimirFotos()" id="btn-recompress" style="display:flex;align-items:center;gap:8px;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Comprimir fotos
-    </button>
+
     <button class="btn btn-dark" onclick="openModal()">+ Adicionar Produto</button>
   </div>
   <div id="estoque-empty" class="empty-state">
@@ -457,7 +454,7 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
     <table class="stock-table">
       <thead>
         <tr>
-          <th>Foto</th><th>Produto</th><th>Custo</th><th>Venda</th><th>Promo</th><th>Lucro</th><th>Estoque</th><th>Catálogo</th><th>Ações</th>
+          <th>Foto</th><th>Produto</th><th>Custo</th><th>Venda</th><th>Promo</th><th>Lucro s/ Promo</th><th>Lucro c/ Promo</th><th>Multiplicador</th><th>Estoque</th><th>Catálogo</th><th>Ações</th>
         </tr>
       </thead>
       <tbody id="estoque-tbody"></tbody>
@@ -869,6 +866,8 @@ function renderEstoque(){
       <td>${fmt(p.preco||0)}</td>
       <td>${promoHtml}</td>
       <td><div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:${((p.preco||0)-(p.custo||0)-(p.emb||0))>=0?'var(--success)':'var(--danger)'};">${fmt((p.preco||0)-(p.custo||0)-(p.emb||0))}</div></td>
+      <td>${(()=>{ const lp=p.precoPromo&&parseFloat(p.precoPromo)>0?(parseFloat(p.precoPromo)-(p.custo||0)-(p.emb||0)):null; return lp!==null?`<div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:${lp>=0?'var(--success)':'var(--danger)'};">${fmt(lp)}</div>`:`<div style="font-size:11px;color:var(--ink3);">—</div>`; })()}</td>
+      <td>${(()=>{ const custoBase=(p.custo||0)+(p.emb||0); if(custoBase<=0) return '<div style="font-size:11px;color:var(--ink3);">—</div>'; const mult=(p.preco||0)/custoBase; const multPromo=p.precoPromo&&parseFloat(p.precoPromo)>0?parseFloat(p.precoPromo)/custoBase:null; return `<div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--gold);">${mult.toFixed(1)}×</div>${multPromo!==null?`<div style="font-size:10px;color:var(--ink3);">promo: ${multPromo.toFixed(1)}×</div>`:''}`;})()}</td>
       <td><div class="qty-ctrl">
         <button class="qty-btn" onclick="event.stopPropagation();alterarQtd('${p.id}',-1)">−</button>
         <span class="qty-num">${p.qtd||0}</span>
@@ -1053,10 +1052,11 @@ function renderCarrinho(){
       produtos.filter(p=>p.qtd>0||p.id===item.produtoId).map(p=>
         `<option value="${p.id}"${p.id===item.produtoId?' selected':''}>${p.nome} (${p.qtd} em estoque)</option>`
       ).join('');
-    return `<div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:14px;background:var(--pearl);border:1px solid var(--pearl3);padding:14px 16px;position:relative;">
+    return `<div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:14px;background:var(--pearl);border:1px solid var(--pearl3);padding:14px 16px;position:relative;flex-wrap:wrap;">
       <div style="flex:2;min-width:0;">
         ${idx===0?'<div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:var(--ink2);font-weight:500;margin-bottom:7px;">Produto</div>':''}
         <select class="cart-produto-select" data-uid="${item.uid}" onchange="onCartProdutoChange(this)" style="width:100%;background:var(--white);border:1px solid var(--pearl3);border-bottom:2px solid var(--pearl3);color:var(--ink);padding:12px 14px;font-family:'Jost',sans-serif;font-size:15px;font-weight:400;outline:none;">${optsHTML}</select>
+        ${(()=>{ const p=produtos.find(x=>x.id===item.produtoId); const show=p&&p.precoPromo&&parseFloat(p.precoPromo)>0; return `<div class="cart-promo-info" data-uid="${item.uid}" style="display:${show?'block':'none'};font-size:10px;color:var(--gold);letter-spacing:0.15em;margin-top:5px;">★ Preço promo aplicado (normal: ${p?fmt(p.preco):''})</div>`; })()}
       </div>
       <div style="flex:1;min-width:90px;">
         ${idx===0?'<div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:var(--ink2);font-weight:500;margin-bottom:7px;">Valor (R$)</div>':''}
@@ -1075,10 +1075,22 @@ function onCartProdutoChange(sel){
   item.produtoId = sel.value;
   const p = produtos.find(x=>x.id===sel.value);
   if(p && p.preco){
-    item.valor = p.preco;
+    // Se tem preço promocional ativo, usa ele por padrão
+    const valorParaVenda = (p.precoPromo && parseFloat(p.precoPromo)>0) ? parseFloat(p.precoPromo) : p.preco;
+    item.valor = valorParaVenda;
     // Atualiza input de valor com o mesmo data-uid
     const valInput = document.querySelector(`.cart-valor-input[data-uid="${sel.dataset.uid}"]`);
-    if(valInput) valInput.value = p.preco;
+    if(valInput) valInput.value = valorParaVenda;
+    // Mostra badge de promo no item se aplicável
+    const promoInfo = document.querySelector(`.cart-promo-info[data-uid="${sel.dataset.uid}"]`);
+    if(promoInfo){
+      if(p.precoPromo && parseFloat(p.precoPromo)>0){
+        promoInfo.textContent = `★ Preço promo aplicado (normal: ${fmt(p.preco)})`;
+        promoInfo.style.display = 'block';
+      } else {
+        promoInfo.style.display = 'none';
+      }
+    }
   }
   calcVenda();
 }
