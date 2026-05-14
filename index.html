@@ -369,6 +369,10 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
       <div class="hstat-val" id="hstat-lucro">R$ 0</div>
       <div class="hstat-label">Lucro acumulado</div>
     </div>
+    <div class="hstat">
+      <div class="hstat-val" id="hstat-total-vendas">R$ 0</div>
+      <div class="hstat-label">Total em vendas</div>
+    </div>
   </div>
 </header>
 
@@ -813,9 +817,11 @@ function updateHeader(){
   const pecas = produtos.reduce((a,p)=>a+(p.qtd||0),0);
   const inv   = produtos.reduce((a,p)=>a+(p.custo||0)*(p.qtd||0),0);
   const lucro = vendas.reduce((a,v)=>a+(v.lucroLiquido??v.lucro??0),0);
-  document.getElementById('hstat-pecas').textContent     = pecas;
-  document.getElementById('hstat-investido').textContent = fmt(inv);
-  document.getElementById('hstat-lucro').textContent     = fmt(lucro);
+  const totalVendas = vendas.reduce((a,v)=>a+(v.valor||0),0);
+  document.getElementById('hstat-pecas').textContent         = pecas;
+  document.getElementById('hstat-investido').textContent     = fmt(inv);
+  document.getElementById('hstat-lucro').textContent         = fmt(lucro);
+  document.getElementById('hstat-total-vendas').textContent  = fmt(totalVendas);
 }
 
 // LOGO
@@ -1267,12 +1273,14 @@ function renderHistorico(){
   const sorted=[...vendas].sort((a,b)=>{
     const na=(a.clienteNome||'').toLowerCase().trim();
     const nb=(b.clienteNome||'').toLowerCase().trim();
-    if(!na&&!nb) return (b.data||'').localeCompare(a.data||'');
+    const da=a.data?new Date(a.data).getTime():(a.ts||0);
+    const db=b.data?new Date(b.data).getTime():(b.ts||0);
+    if(!na&&!nb) return db-da;
     if(!na) return 1;
     if(!nb) return -1;
     const cmp=na.localeCompare(nb,'pt-BR');
     if(cmp!==0) return cmp;
-    return (b.data||'').localeCompare(a.data||'');
+    return db-da;
   });
 
   list.innerHTML=`<div class="panel"><div class="panel-title">Todas as Vendas</div>
