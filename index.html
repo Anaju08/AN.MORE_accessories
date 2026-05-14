@@ -1263,14 +1263,16 @@ function renderHistorico(){
   if(!vendas.length){empty.style.display='block';list.innerHTML='';return;}
   empty.style.display='none';
 
-  // Ordena por nome da cliente (sem nome vai para o final)
+  // Ordena por nome da cliente (A→Z); mesmo cliente → mais recente primeiro; sem nome → final
   const sorted=[...vendas].sort((a,b)=>{
     const na=(a.clienteNome||'').toLowerCase().trim();
     const nb=(b.clienteNome||'').toLowerCase().trim();
-    if(!na&&!nb) return 0;
+    if(!na&&!nb) return (b.data||'').localeCompare(a.data||'');
     if(!na) return 1;
     if(!nb) return -1;
-    return na.localeCompare(nb,'pt-BR');
+    const cmp=na.localeCompare(nb,'pt-BR');
+    if(cmp!==0) return cmp;
+    return (b.data||'').localeCompare(a.data||'');
   });
 
   list.innerHTML=`<div class="panel"><div class="panel-title">Todas as Vendas</div>
