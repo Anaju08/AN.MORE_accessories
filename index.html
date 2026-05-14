@@ -673,6 +673,28 @@ main { position:relative; z-index:5; padding:48px 56px; max-width:1200px; }
   </div>
 </div>
 
+<!-- MODAL EDITAR VENDA -->
+<div class="modal-bg" id="edit-venda-modal-bg" onclick="if(event.target===this)fecharEditarVenda()">
+  <div class="modal" style="max-width:420px;">
+    <button class="modal-close" onclick="fecharEditarVenda()">×</button>
+    <div class="modal-title">Editar Venda</div>
+    <div class="form-grid" style="grid-template-columns:1fr;gap:18px;margin-bottom:24px;">
+      <div class="form-group">
+        <label>Nome da Cliente</label>
+        <input type="text" id="edit-venda-nome" placeholder="Nome da cliente">
+      </div>
+      <div class="form-group">
+        <label>Data da Venda</label>
+        <input type="date" id="edit-venda-data">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn" onclick="fecharEditarVenda()">Cancelar</button>
+      <button class="btn btn-dark" onclick="salvarEditarVenda()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- /app-screen -->
 
 <script type="module">
@@ -1224,6 +1246,8 @@ function registrarVenda(){
 }
 
 // HISTÓRICO
+let _vendaEditId = null;
+
 function renderHistorico(){
   const list=document.getElementById('hist-list');
   const empty=document.getElementById('hist-empty');
@@ -1238,22 +1262,110 @@ function renderHistorico(){
   document.getElementById('hist-qtd').textContent=vendas.length+' vendas';
   if(!vendas.length){empty.style.display='block';list.innerHTML='';return;}
   empty.style.display='none';
+
+  // Ordena por nome da cliente (sem nome vai para o final)
+  const sorted=[...vendas].sort((a,b)=>{
+    const na=(a.clienteNome||'').toLowerCase().trim();
+    const nb=(b.clienteNome||'').toLowerCase().trim();
+    if(!na&&!nb) return 0;
+    if(!na) return 1;
+    if(!nb) return -1;
+    return na.localeCompare(nb,'pt-BR');
+  });
+
   list.innerHTML=`<div class="panel"><div class="panel-title">Todas as Vendas</div>
-    ${vendas.map(v=>{
+    ${sorted.map(v=>{
       const dt=v.data?new Date(v.data+'T12:00:00').toLocaleDateString('pt-BR'):'—';
-      const thumb=v.foto?`<img src="${v.foto}" style="width:40px;height:40px;object-fit:cover;border:1px solid var(--pearl3);margin-right:12px;flex-shrink:0">`:
-        `<div style="width:40px;height:40px;background:var(--pearl2);border:1px solid var(--pearl3);display:flex;align-items:center;justify-content:center;margin-right:12px;flex-shrink:0">⌚</div>`;
-      return `<div class="venda-item">
-        <div style="display:flex;align-items:center;">${thumb}
-          <div><div class="venda-name">${v.nome}</div><div class="venda-date">${dt} · ${v.pagto||''}${v.obs?' · '+v.obs:''}${v.vendedora?' · '+v.vendedora:''}</div></div>
+      const thumb=v.foto?`<img src="${v.foto}" style="width:44px;height:44px;object-fit:cover;border:1px solid var(--pearl3);margin-right:12px;flex-shrink:0">`:
+        `<div style="width:44px;height:44px;background:var(--pearl2);border:1px solid var(--pearl3);display:flex;align-items:center;justify-content:center;margin-right:12px;flex-shrink:0">⌚</div>`;
+      const clienteLabel = v.clienteNome
+        ? `<span style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400;color:var(--gold);display:block;margin-bottom:1px;">${v.clienteNome}</span>`
+        : `<span style="font-size:11px;letter-spacing:0.15em;color:var(--ink3);text-transform:uppercase;">Sem nome</span>`;
+      return `<div class="venda-item hist-row" style="cursor:pointer;flex-direction:column;gap:0;padding:0;" onclick="toggleHistDetail('${v.id}')">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:14px 0;">
+          <div style="display:flex;align-items:center;">${thumb}
+            <div>
+              ${clienteLabel}
+              <div class="venda-name" style="font-size:14px;color:var(--ink2);">${v.nome}</div>
+              <div class="venda-date">${dt} · ${v.pagto||''}${v.obs?' · '+v.obs:''}${v.vendedora?' · '+v.vendedora:''}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;flex-shrink:0;">
+            <div style="text-align:right;">
+              <div class="venda-profit">${fmt(v.lucroLiquido??v.lucro)}</div>
+              <div class="venda-price">${fmt(v.valor)} vendido</div>
+            </div>
+            <div style="color:var(--ink3);font-size:18px;transition:transform 0.2s;" id="hist-arrow-${v.id}">›</div>
+          </div>
         </div>
-        <div style="text-align:right;">
-          <div class="venda-profit">${fmt(v.lucroLiquido??v.lucro)}</div>
-          <div class="venda-price">${fmt(v.valor)} vendido</div>
-        </div></div>`;
+        <div class="hist-detail-panel" id="hist-detail-${v.id}" style="display:none;width:100%;border-top:1px solid var(--pearl2);background:var(--pearl);padding:18px 20px 16px;animation:fadeIn 0.2s ease;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:16px;">
+            <div><div class="detail-item-label">Cliente</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold);">${v.clienteNome||'—'}</div></div>
+            <div><div class="detail-item-label">WhatsApp</div><div style="font-size:14px;color:var(--ink2);">${v.clienteWhatsapp||'—'}</div></div>
+            <div><div class="detail-item-label">E-mail</div><div style="font-size:14px;color:var(--ink2);">${v.clienteEmail||'—'}</div></div>
+            <div><div class="detail-item-label">Aniversário</div><div style="font-size:14px;color:var(--ink2);">${v.clienteAniversario?new Date(v.clienteAniversario+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</div></div>
+            <div><div class="detail-item-label">Data da Venda</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink);">${dt}</div></div>
+            <div><div class="detail-item-label">Pagamento</div><div style="font-size:14px;color:var(--ink2);">${v.pagto||'—'}</div></div>
+            <div><div class="detail-item-label">Valor vendido</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink);">${fmt(v.valor)}</div></div>
+            <div><div class="detail-item-label">Lucro líquido</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--success);">${fmt(v.lucroLiquido??v.lucro)}</div></div>
+            ${v.desconto>0?`<div><div class="detail-item-label">Desconto</div><div style="font-size:14px;color:var(--danger);">-${fmt(v.descontoVal)}</div></div>`:''}
+            ${v.vendedora?`<div><div class="detail-item-label">Vendedora</div><div style="font-size:14px;color:var(--ink2);">${v.vendedora}</div></div>`:''}
+            ${v.obs?`<div><div class="detail-item-label">Observação</div><div style="font-size:14px;color:var(--ink2);">${v.obs}</div></div>`:''}
+          </div>
+          <div style="display:flex;gap:10px;" onclick="event.stopPropagation()">
+            <button class="btn btn-sm" onclick="abrirEditarVenda('${v.id}')">✎ Editar nome e data</button>
+          </div>
+        </div>
+      </div>`;
     }).join('')}
   </div>`;
 }
+
+function toggleHistDetail(id){
+  const panel=document.getElementById('hist-detail-'+id);
+  const arrow=document.getElementById('hist-arrow-'+id);
+  const isOpen=panel.style.display!=='none';
+  // Fecha todos
+  document.querySelectorAll('.hist-detail-panel').forEach(p=>p.style.display='none');
+  document.querySelectorAll('[id^="hist-arrow-"]').forEach(a=>{a.style.transform='';a.style.color='var(--ink3)';});
+  if(!isOpen){
+    panel.style.display='block';
+    arrow.style.transform='rotate(90deg)';
+    arrow.style.color='var(--gold)';
+  }
+}
+window.toggleHistDetail=toggleHistDetail;
+
+function abrirEditarVenda(id){
+  const v=vendas.find(x=>x.id===id);
+  if(!v) return;
+  _vendaEditId=id;
+  document.getElementById('edit-venda-nome').value=v.clienteNome||'';
+  document.getElementById('edit-venda-data').value=v.data||'';
+  document.getElementById('edit-venda-modal-bg').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+window.abrirEditarVenda=abrirEditarVenda;
+
+function fecharEditarVenda(){
+  document.getElementById('edit-venda-modal-bg').classList.remove('open');
+  document.body.style.overflow='';
+  _vendaEditId=null;
+}
+window.fecharEditarVenda=fecharEditarVenda;
+
+function salvarEditarVenda(){
+  if(!_vendaEditId) return;
+  const v=vendas.find(x=>x.id===_vendaEditId);
+  if(!v) return;
+  v.clienteNome=document.getElementById('edit-venda-nome').value.trim()||null;
+  v.data=document.getElementById('edit-venda-data').value||v.data;
+  saveData();
+  fecharEditarVenda();
+  renderHistorico();
+  toast('Venda atualizada ✓');
+}
+window.salvarEditarVenda=salvarEditarVenda;
 
 // DETALHE
 function verDetalhe(id){
